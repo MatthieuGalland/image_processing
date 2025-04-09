@@ -5,4 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 add_executable(projetP1S2 main.c
         utils.c
-        utils.h)
+        utils.h
+        utils24.c
+        utils24.h
+        utils24.c)
