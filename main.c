@@ -2,8 +2,15 @@
 #include <stdlib.h>
 
 #include "utils.h"
+#include "utils24.h"
 
 int main(void) {
+
+    t_bmp24 *image24 = bmp24_loadImage("C:/Users/Thomas/CLionProjects/image_processing/sources/lena_color.bmp");
+
+    bmp24_printInfo(image24);
+    bmp24_saveImage(image24, "C:/Users/Thomas/CLionProjects/image_processing/sources/save_color.bmp");
+    /*
     t_bmp8 image = bmp8_loadImage("D:/DEV/C/projetP1S2/sources/lena_gray.bmp");
 
 
@@ -43,7 +50,9 @@ int main(void) {
 
     bmp8_saveImage("D:/DEV/C/projetP1S2/sources/save.bmp",&image);
 
-    //bmp_8_free(&image);
+    //bmp_8_free(&image);*/
+
+
 
     return 0;
 }
