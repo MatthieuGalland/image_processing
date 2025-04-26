@@ -24,32 +24,28 @@ void bmp24_freeDataPixels (t_pixel ** pixels, int height) {
     free(pixels);
 }
 
+t_bmp24 * bmp24_allocate (int width, int height, int colorDepth) {
+    t_bmp24 * image = malloc(sizeof(t_bmp24));
+    image->width = width;
+    image->height = height;
+    image->data = bmp24_allocateDataPixels(width,height);
+    return image;
+}
 
-/**
-* @brief Positionne le curseur de fichier a la position position dans le fichier file,
-* puis lit n elements de taille size dans buffer.
-* @param position La position a partir de laquelle il faut lire dans file.
-* @param buffer Le buffer pour stocker les donnees lues.
-* @param size La taille de chaque element a lire.
-* @param n Le nombre d'elements a lire.
-* @param file Le descripteur de fichier dans lequel il faut lire.
-* @return void
-*/
+void bmp24_free (t_bmp24 * img) {
+    int width = img->width;
+    int height = img->height;
+    bmp24_freeDataPixels(img->data,img->height);
+    free(img);
+}
+
+
 void file_rawRead(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
     fseek(file, position, SEEK_SET);
     fread(buffer, size, n, file);
 }
 
-/**
-* @brief Positionne le curseur de fichier a la position position dans le fichier file,
-* puis ecrit n elements de taille size depuis le buffer.
-* @param position La position a partir de laquelle il faut ecrire dans file.
-* @param buffer Le buffer contenant les elements a ecrire.
-* @param size La taille de chaque element a ecrire.
-* @param n Le nombre d'elements a ecrire.
-* @param file Le descripteur de fichier dans lequel il faut ecrire.
-* @return void
-*/
+
 void file_rawWrite (uint32_t position, void * buffer, uint32_t size, size_t n, FILE * file) {
     fseek(file, position, SEEK_SET);
     fwrite(buffer, size, n, file);
@@ -104,28 +100,27 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     }
 
     // Allouer de la memoire pour l'image
-    t_bmp24 *img = (t_bmp24 *)malloc(sizeof(t_bmp24));
+    int32_t width, height,depth;
+    file_rawRead(BITMAP_WIDTH, &width, sizeof(int32_t),1,file);
+    file_rawRead(BITMAP_HEIGHT, &height, sizeof(int32_t),1,file);
+    file_rawRead(BITMAP_DEPTH, &depth, sizeof(int32_t),1,file);
+
+    t_bmp24* img = bmp24_allocate(width, height, depth);
     if (!img) {
         printf("[ERREUR] Allocation memoire echouee.\n");
         fclose(file);
         return NULL;
     }
 
-    // Lire l'en-tête de fichier
-// Lire le header brut
-    unsigned char raw_header[14];
-    file_rawRead(0, raw_header, 1, 14, file);
+    // Lecture du header
+    t_bmp_header header;
+    file_rawRead(BITMAP_MAGIC, &header,sizeof(t_bmp_header),1,file);
+    img->header = header;
 
-
+    // Debug
     printf("[DEBUG] type = %X\n", img->header.type);
     printf("[DEBUG] size = %u\n", img->header.size);
     printf("[DEBUG] offset = %u\n", img->header.offset);
-
-    img->header.type = *(uint16_t*)&raw_header[0];
-    img->header.size = *(uint32_t*)&raw_header[2];
-    img->header.reserved1 = *(uint16_t*)&raw_header[6];
-    img->header.reserved2 = *(uint16_t*)&raw_header[8];
-    img->header.offset = *(uint32_t*)&raw_header[10];
 
     // Verification du type BMP
     if (img->header.type != BMP_TYPE) {
@@ -181,7 +176,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
 
     printf("[DEBUG] Fichier %s ouvert avec succès.\n", filename);
 
-    // Chaque ligne c 4 octet
+    // Chaque ligne a un paddind de 4 octets
     int rowPadding = (4 - (img->width * 3) % 4) % 4;
     int rowSize = img->width * 3 + rowPadding;
     int pixelDataSize = rowSize * img->height;
@@ -208,7 +203,6 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     printf("[DEBUG] En-têtes prepares - Taille fichier: %u, Offset donnees: %u\n",
            img->header.size, img->header.offset);
 
-    // Le header est buggé ducoup j'ai tout refait prcsq azé
     // En-tête de fichier BMP
     fwrite(&img->header.type, sizeof(uint16_t), 1, file);
     fwrite(&img->header.size, sizeof(uint32_t), 1, file);
