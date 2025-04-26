@@ -285,3 +285,46 @@ void bmp24_printInfo(t_bmp24 *img) {
     printf("==============================\n");
 }
 
+void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
+    if (!image || !kernel || kernelSize <= 0) return;
+    int width = image->width, height = image->height;
+    int offset = kernelSize / 2;
+    // Allocation temporaire et copie des pixels originaux
+    t_pixel **tmp = bmp24_allocateDataPixels(width,height);
+    if (!tmp) return;
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            tmp[y][x] = image->data[y][x];
+        }
+    }
+    printf("Fin mapping pixels\n");
+    // Application du filtre convolution sur chaque canal
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double sumR = 0.0, sumG = 0.0, sumB = 0.0;
+            for (int ky = 0; ky < kernelSize; ky++) {
+                for (int kx = 0; kx < kernelSize; kx++) {
+                    int xx = x + kx - offset;
+                    int yy = y + ky - offset;
+                    if (xx >= 0 && xx < width && yy >= 0 && yy < height) {
+                        t_pixel *p = &tmp[yy][xx];
+                        float kval = kernel[ky][kx];
+                        sumR += p->red * kval;
+                        sumG += p->green * kval;
+                        sumB += p->blue * kval;
+                    }
+                }
+            }
+            // Clamp et assignation dans l'image originale
+            int vR = (int)sumR; if (vR < 0) vR = 0; if (vR > 255) vR = 255;
+            int vG = (int)sumG; if (vG < 0) vG = 0; if (vG > 255) vG = 255;
+            int vB = (int)sumB; if (vB < 0) vB = 0; if (vB > 255) vB = 255;
+            image->data[y][x].red = (unsigned char)vR;
+            image->data[y][x].green = (unsigned char)vG;
+            image->data[y][x].blue = (unsigned char)vB;
+        }
+    }
+    printf("Filtre applique !\n");
+    //bmp24_freeDataPixels(width,height)); // Libération de la mémoire
+}
+
