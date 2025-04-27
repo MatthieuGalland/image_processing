@@ -1,6 +1,3 @@
-//
-// Created by sandw on 09/04/2025.
-//
 #include "utils24.h"
 
 #include <stdio.h>
@@ -24,28 +21,32 @@ void bmp24_freeDataPixels (t_pixel ** pixels, int height) {
     free(pixels);
 }
 
-t_bmp24 * bmp24_allocate (int width, int height, int colorDepth) {
-    t_bmp24 * image = malloc(sizeof(t_bmp24));
-    image->width = width;
-    image->height = height;
-    image->data = bmp24_allocateDataPixels(width,height);
-    return image;
-}
 
-void bmp24_free (t_bmp24 * img) {
-    int width = img->width;
-    int height = img->height;
-    bmp24_freeDataPixels(img->data,img->height);
-    free(img);
-}
-
-
+/**
+* @brief Positionne le curseur de fichier a la position position dans le fichier file,
+* puis lit n elements de taille size dans buffer.
+* @param position La position a partir de laquelle il faut lire dans file.
+* @param buffer Le buffer pour stocker les donnees lues.
+* @param size La taille de chaque element a lire.
+* @param n Le nombre d'elements a lire.
+* @param file Le descripteur de fichier dans lequel il faut lire.
+* @return void
+*/
 void file_rawRead(uint32_t position, void *buffer, uint32_t size, size_t n, FILE *file) {
     fseek(file, position, SEEK_SET);
     fread(buffer, size, n, file);
 }
 
-
+/**
+* @brief Positionne le curseur de fichier a la position position dans le fichier file,
+* puis ecrit n elements de taille size depuis le buffer.
+* @param position La position a partir de laquelle il faut ecrire dans file.
+* @param buffer Le buffer contenant les elements a ecrire.
+* @param size La taille de chaque element a ecrire.
+* @param n Le nombre d'elements a ecrire.
+* @param file Le descripteur de fichier dans lequel il faut ecrire.
+* @return void
+*/
 void file_rawWrite (uint32_t position, void * buffer, uint32_t size, size_t n, FILE * file) {
     fseek(file, position, SEEK_SET);
     fwrite(buffer, size, n, file);
@@ -100,27 +101,28 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     }
 
     // Allouer de la memoire pour l'image
-    int32_t width, height,depth;
-    file_rawRead(BITMAP_WIDTH, &width, sizeof(int32_t),1,file);
-    file_rawRead(BITMAP_HEIGHT, &height, sizeof(int32_t),1,file);
-    file_rawRead(BITMAP_DEPTH, &depth, sizeof(int32_t),1,file);
-
-    t_bmp24* img = bmp24_allocate(width, height, depth);
+    t_bmp24 *img = (t_bmp24 *)malloc(sizeof(t_bmp24));
     if (!img) {
         printf("[ERREUR] Allocation memoire echouee.\n");
         fclose(file);
         return NULL;
     }
 
-    // Lecture du header
-    t_bmp_header header;
-    file_rawRead(BITMAP_MAGIC, &header,sizeof(t_bmp_header),1,file);
-    img->header = header;
+    // Lire l'en-tête de fichier
+// Lire le header brut
+    unsigned char raw_header[14];
+    file_rawRead(0, raw_header, 1, 14, file);
 
-    // Debug
+
     printf("[DEBUG] type = %X\n", img->header.type);
     printf("[DEBUG] size = %u\n", img->header.size);
     printf("[DEBUG] offset = %u\n", img->header.offset);
+
+    img->header.type = *(uint16_t*)&raw_header[0];
+    img->header.size = *(uint32_t*)&raw_header[2];
+    img->header.reserved1 = *(uint16_t*)&raw_header[6];
+    img->header.reserved2 = *(uint16_t*)&raw_header[8];
+    img->header.offset = *(uint32_t*)&raw_header[10];
 
     // Verification du type BMP
     if (img->header.type != BMP_TYPE) {
@@ -176,7 +178,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
 
     printf("[DEBUG] Fichier %s ouvert avec succès.\n", filename);
 
-    // Chaque ligne a un paddind de 4 octets
+    // Chaque ligne c 4 octet
     int rowPadding = (4 - (img->width * 3) % 4) % 4;
     int rowSize = img->width * 3 + rowPadding;
     int pixelDataSize = rowSize * img->height;
@@ -203,6 +205,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     printf("[DEBUG] En-têtes prepares - Taille fichier: %u, Offset donnees: %u\n",
            img->header.size, img->header.offset);
 
+    // Le header est buggé ducoup j'ai tout refait prcsq azé
     // En-tête de fichier BMP
     fwrite(&img->header.type, sizeof(uint16_t), 1, file);
     fwrite(&img->header.size, sizeof(uint32_t), 1, file);
@@ -278,4 +281,99 @@ void bmp24_printInfo(t_bmp24 *img) {
 
     printf("==============================\n");
 }
+
+void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
+    if (!image || !kernel || kernelSize <= 0) return;
+    int width = image->width, height = image->height;
+    int offset = kernelSize / 2;
+    // Allocation temporaire et copie des pixels originaux
+    t_pixel **tmp = bmp24_allocateDataPixels(width,height);
+    if (!tmp) return;
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            tmp[y][x] = image->data[y][x];
+        }
+    }
+    printf("Fin mapping pixels\n");
+    // Application du filtre convolution sur chaque canal
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double sumR = 0.0, sumG = 0.0, sumB = 0.0;
+            for (int ky = 0; ky < kernelSize; ky++) {
+                for (int kx = 0; kx < kernelSize; kx++) {
+                    int xx = x + kx - offset;
+                    int yy = y + ky - offset;
+                    if (xx >= 0 && xx < width && yy >= 0 && yy < height) {
+                        t_pixel *p = &tmp[yy][xx];
+                        float kval = kernel[ky][kx];
+                        sumR += p->red * kval;
+                        sumG += p->green * kval;
+                        sumB += p->blue * kval;
+                    }
+                }
+            }
+            // Clamp et assignation dans l'image originale
+            int vR = (int)sumR; if (vR < 0) vR = 0; if (vR > 255) vR = 255;
+            int vG = (int)sumG; if (vG < 0) vG = 0; if (vG > 255) vG = 255;
+            int vB = (int)sumB; if (vB < 0) vB = 0; if (vB > 255) vB = 255;
+            image->data[y][x].red = (unsigned char)vR;
+            image->data[y][x].green = (unsigned char)vG;
+            image->data[y][x].blue = (unsigned char)vB;
+        }
+    }
+    printf("Filtre applique !\n");
+    //bmp24_freeDataPixels(width,height)); // Libération de la mémoire
+}
+void bmp24_negative(t_bmp24 *img) {
+    int width = img->width;
+    int height = img->height;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            img->data[y][x].red = 255 - img->data[y][x].red;
+            img->data[y][x].green = 255 - img->data[y][x].green;
+            img->data[y][x].blue = 255 - img->data[y][x].blue;
+        }
+    }
+}
+
+void bmp24_grayscale(t_bmp24 * img) {
+    int width = img->width;
+    int height = img->height;
+    int moyenne;
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            moyenne = (img->data[y][x].red + img->data[y][x].blue + img->data[y][x].green)/3;
+            img->data[y][x].red = moyenne;
+            img->data[y][x].blue = moyenne;
+            img->data[y][x].green = moyenne;
+        }
+    }
+}
+
+void bmp24_brightness(t_bmp24 * img, int value) {
+    int width = img->width;
+    int height = img->height;
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            // On s'assure que la valeur ne dépasse pas 255
+            if (img->data[y][x].red+value<=255)
+                img->data[y][x].red+=value;
+            else
+                img->data[y][x].red = 255;
+
+            if (img->data[y][x].green+value<=255)
+                img->data[y][x].green+=value;
+            else
+                img->data[y][x].green = 255;
+
+            if (img->data[y][x].blue+value<=255)
+                img->data[y][x].blue+=value;
+            else
+                img->data[y][x].blue = 255;
+
+        }
+    }
+}
+
 

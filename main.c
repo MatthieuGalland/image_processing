@@ -6,10 +6,9 @@
 
 int main(void) {
 
-    t_bmp24 *image24 = bmp24_loadImage("C:/Users/sandw/CLionProjects/image_processing2/sources/lena_color.bmp");
+    t_bmp24 *image24 = bmp24_loadImage("../sources/lena_color.bmp");
 
-    // bmp24_printInfo(image24);
-    bmp24_saveImage(image24, "C:/Users/sandw/CLionProjects/image_processing2/sources/save_color.bmp");
+    bmp24_saveImage(image24, "../sources/save_color.bmp");
     /*
     t_bmp8 image = bmp8_loadImage("D:/DEV/C/projetP1S2/sources/lena_gray.bmp");
 
