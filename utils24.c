@@ -176,14 +176,15 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
         return;
     }
 
-    printf("[DEBUG] Fichier %s ouvert avec succès.\n", filename);
+    printf("[DEBUG] Fichier créer/ouvert avec succès.\n");
 
     // Chaque ligne c 4 octet
     int rowPadding = (4 - (img->width * 3) % 4) % 4;
     int rowSize = img->width * 3 + rowPadding;
     int pixelDataSize = rowSize * img->height;
 
-
+// Vérification de la validité
+    /*
     img->header.type = BMP_TYPE;
     img->header.size = HEADER_SIZE + INFO_SIZE + pixelDataSize;
     img->header.reserved1 = 0;
@@ -201,6 +202,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     img->header_info.yresolution = 0;
     img->header_info.ncolors = 0;
     img->header_info.importantcolors = 0;
+    */
 
     printf("[DEBUG] En-têtes prepares - Taille fichier: %u, Offset donnees: %u\n",
            img->header.size, img->header.offset);
@@ -238,6 +240,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
             fwrite(bgr, sizeof(unsigned char), 3, file);
         }
 
+        // Pour finir les lignes et conserver la taille de 4 octets
         for (int p = 0; p < rowPadding; p++) {
             fputc(0x00, file);
         }
@@ -282,10 +285,12 @@ void bmp24_printInfo(t_bmp24 *img) {
     printf("==============================\n");
 }
 
+// Filtres
 void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
     if (!image || !kernel || kernelSize <= 0) return;
     int width = image->width, height = image->height;
     int offset = kernelSize / 2;
+
     // Allocation temporaire et copie des pixels originaux
     t_pixel **tmp = bmp24_allocateDataPixels(width,height);
     if (!tmp) return;
@@ -294,7 +299,7 @@ void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
             tmp[y][x] = image->data[y][x];
         }
     }
-    printf("Fin mapping pixels\n");
+    //printf("Fin mapping pixels\n");
     // Application du filtre convolution sur chaque canal
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -312,6 +317,7 @@ void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
                     }
                 }
             }
+
             // Clamp et assignation dans l'image originale
             int vR = (int)sumR; if (vR < 0) vR = 0; if (vR > 255) vR = 255;
             int vG = (int)sumG; if (vG < 0) vG = 0; if (vG > 255) vG = 255;
@@ -322,8 +328,11 @@ void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
         }
     }
     printf("Filtre applique !\n");
-    //bmp24_freeDataPixels(width,height)); // Libération de la mémoire
+    bmp24_freeDataPixels(tmp,height);
 }
+
+
+
 void bmp24_negative(t_bmp24 *img) {
     int width = img->width;
     int height = img->height;
