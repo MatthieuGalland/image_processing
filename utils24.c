@@ -209,6 +209,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
 
     // Le header est buggé ducoup j'ai tout refait prcsq azé
     // En-tête de fichier BMP
+
     fwrite(&img->header.type, sizeof(uint16_t), 1, file);
     fwrite(&img->header.size, sizeof(uint32_t), 1, file);
     fwrite(&img->header.reserved1, sizeof(uint16_t), 1, file);
@@ -330,8 +331,6 @@ void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
     printf("Filtre applique !\n");
     bmp24_freeDataPixels(tmp,height);
 }
-
-
 
 void bmp24_negative(t_bmp24 *img) {
     int width = img->width;
