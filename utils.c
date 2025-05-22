@@ -8,73 +8,87 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-t_bmp8 bmp8_loadImage(const char *filename) {
+t_bmp8* bmp8_loadImage(const char *filename) {
     FILE *file = fopen(filename, "rb");
     if (file == NULL) {
         printf("[ERREUR] Impossible d'ouvrir le fichier : %s\n", filename);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
-    unsigned char header[54];
+    unsigned char *header = (unsigned char*)calloc(54, sizeof(unsigned char));
+    if (!header) {
+        printf("[ERREUR] Erreur d'allocation pour l'en-tête.\n");
+        fclose(file);
+        return NULL;
+    }
+
     if (fread(header, sizeof(unsigned char), 54, file) != 54) {
         printf("[ERREUR] Impossible de lire l'en-tête BMP.\n");
+        free(header);
         fclose(file);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
-    const unsigned int width = *(unsigned int*)&header[18];
-    const unsigned int height = *(unsigned int*)&header[22];
-    const unsigned int dataSize = *(unsigned int*)&header[34];
-    const unsigned int colorDepth = *(unsigned short*)&header[28]; // short (2 octets)
-    const unsigned int offset = *(unsigned int*)&header[10];
+    unsigned int width      = *(unsigned int*)&header[18];
+    unsigned int height     = *(unsigned int*)&header[22];
+    unsigned int dataSize   = *(unsigned int*)&header[34];
+    unsigned short colorDepth = *(unsigned short*)&header[28];
+    unsigned int offset     = *(unsigned int*)&header[10];
 
     if (colorDepth != 8) {
-        printf("[ERREUR] Format BMP non supporte (%u bits, attendu 8 bits).\n", colorDepth);
+        printf("[ERREUR] Format BMP non supporté (%u bits, attendu 8 bits).\n", colorDepth);
+        free(header);
         fclose(file);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     t_bmp8 *image = (t_bmp8*)malloc(sizeof(t_bmp8));
     if (!image) {
-        printf("[ERREUR] echec d'allocation memoire pour l'image.\n");
+        printf("[ERREUR] Échec d'allocation mémoire pour l'image.\n");
+        free(header);
         fclose(file);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
-    image->width = width;
-    image->height = height;
-    image->dataSize = dataSize;
+    image->width      = width;
+    image->height     = height;
+    image->dataSize   = dataSize;
     image->colorDepth = colorDepth;
 
-    memcpy(image->header, header, sizeof(header));
+    // Copiez exactement 54 octets, plutôt que sizeof(header)
+    memcpy(image->header, header, 54);
 
     if (fread(image->colorTable, sizeof(unsigned char), 1024, file) != 1024) {
-        printf("[ERREUR] echec de lecture de la table des couleurs.\n");
+        printf("[ERREUR] Échec de lecture de la table des couleurs.\n");
+        free(header);
         free(image);
         fclose(file);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     image->data = (unsigned char*)malloc(dataSize);
     if (!image->data) {
-        printf("[ERREUR] echec d'allocation memoire pour les pixels.\n");
+        printf("[ERREUR] Échec d'allocation mémoire pour les pixels.\n");
+        free(header);
         free(image);
         fclose(file);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
     fseek(file, offset, SEEK_SET);
     if (fread(image->data, sizeof(unsigned char), dataSize, file) != dataSize) {
-        printf("[ERREUR] echec de lecture des pixels.\n");
+        printf("[ERREUR] Échec de lecture des pixels.\n");
+        free(header);
         free(image->data);
         free(image);
         fclose(file);
-        exit(EXIT_FAILURE);
+        return NULL;
     }
 
+    free(header);
     fclose(file);
-    return *image;
+
+    return image;
 }
 
 
@@ -146,7 +160,6 @@ void bmp8_negative(t_bmp8 *image) {
         const int final = 255 - value;
         image->colorTable[i] = final;
     }
-    printf("[INFORMATION] Negatif applique !");
 }
 
 void bmp8_brightness(int modifier, t_bmp8 *image) {
@@ -160,7 +173,6 @@ void bmp8_brightness(int modifier, t_bmp8 *image) {
 
         image->colorTable[i] = final;
     }
-    printf("[INFORMATION] Brightness de %d applique !",modifier);
 }
 
 void bmp8_threshold(int threshold, t_bmp8 *image) {
@@ -173,11 +185,7 @@ void bmp8_threshold(int threshold, t_bmp8 *image) {
 
         image->colorTable[i] = final;
     }
-    printf("[INFORMATION] Threshold de %d applique !",threshold);
 }
-
-#include <stdio.h>
-#include <stdlib.h>
 
 void bmp8_applyFilter(t_bmp8 *image, float **kernel, int kernelSize) {
     if (!image || !image->data || !kernel || kernelSize <= 0) {

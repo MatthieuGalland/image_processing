@@ -93,15 +93,17 @@ void bmp24_writePixelData(t_bmp24 *image, FILE *file) {
 }
 
 
-t_bmp24 *bmp24_loadImage(const char *filename) {
+t_bmp24* bmp24_loadImage(const char *filename) {
     FILE *file = fopen(filename, "rb");
+    t_bmp24 *img = (t_bmp24 *)malloc(sizeof(t_bmp24));
+
     if (!file) {
         printf("[ERREUR] Impossible d'ouvrir le fichier : %s\n", filename);
+        free(img);
         return NULL;
     }
 
     // Allouer de la memoire pour l'image
-    t_bmp24 *img = (t_bmp24 *)malloc(sizeof(t_bmp24));
     if (!img) {
         printf("[ERREUR] Allocation memoire echouee.\n");
         fclose(file);
@@ -114,15 +116,17 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     file_rawRead(0, raw_header, 1, 14, file);
 
 
-    printf("[DEBUG] type = %X\n", img->header.type);
-    printf("[DEBUG] size = %u\n", img->header.size);
-    printf("[DEBUG] offset = %u\n", img->header.offset);
+
 
     img->header.type = *(uint16_t*)&raw_header[0];
     img->header.size = *(uint32_t*)&raw_header[2];
     img->header.reserved1 = *(uint16_t*)&raw_header[6];
     img->header.reserved2 = *(uint16_t*)&raw_header[8];
     img->header.offset = *(uint32_t*)&raw_header[10];
+
+    printf("[DEBUG] type = %X\n", img->header.type);
+    printf("[DEBUG] size = %u\n", img->header.size);
+    printf("[DEBUG] offset = %u\n", img->header.offset);
 
     // Verification du type BMP
     if (img->header.type != BMP_TYPE) {
@@ -382,6 +386,68 @@ void bmp24_brightness(t_bmp24 * img, int value) {
 
         }
     }
+}
+
+void bmp24_print_preview(t_bmp24 *image) {
+    if (!image || !image->data) {
+        printf("Invalid image data\n");
+        return;
+    }
+
+    // Scale factor to fit image in console
+    // Assuming console is roughly 80x25 characters
+    int scale_x = image->width / 30 + 1;
+    int scale_y = image->height / 10 + 1;
+
+    // Ensure scale factors are at least 1
+    if (scale_x < 1) scale_x = 1;
+    if (scale_y < 1) scale_y = 1;
+
+    // ASCII characters for different brightness levels (from dark to bright)
+    const char *ascii_chars = "#";
+    int ascii_len = strlen(ascii_chars);
+
+    printf("Image preview (%dx%d):\n", image->width, image->height);
+
+    // Iterate through the scaled image
+    for (int y = 0; y < image->height; y += scale_y) {
+        for (int x = 0; x < image->width; x += scale_x) {
+            // Calculate average color for this block
+            int r_sum = 0, g_sum = 0, b_sum = 0;
+            int count = 0;
+
+            for (int dy = 0; dy < scale_y && y + dy < image->height; dy++) {
+                for (int dx = 0; dx < scale_x && x + dx < image->width; dx++) {
+                    r_sum += image->data[y + dy][x + dx].red;
+                    g_sum += image->data[y + dy][x + dx].green;
+                    b_sum += image->data[y + dy][x + dx].blue;
+                    count++;
+                }
+            }
+
+            if (count > 0) {
+                int r_avg = r_sum / count;
+                int g_avg = g_sum / count;
+                int b_avg = b_sum / count;
+
+                // Calculate brightness (simple average of RGB)
+                int brightness = (r_avg + g_avg + b_avg) / 3;
+
+                // Map brightness to ASCII character
+                int char_index = brightness * ascii_len / 256;
+                if (char_index >= ascii_len) char_index = ascii_len - 1;
+
+                // Use ANSI escape sequences for color
+                printf("\033[38;2;%d;%d;%dm%c\033[0m",
+                       r_avg, g_avg, b_avg,
+                       ascii_chars[char_index]);
+            }
+        }
+        printf("\n"); // New line after each row
+    }
+
+    // Reset colors at the end
+    printf("\033[0m\n");
 }
 
 

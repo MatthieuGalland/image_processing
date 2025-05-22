@@ -1,3 +1,0 @@
-C:/Users/sandw/CLionProjects/image_processing3/cmake-build-debug/CMakeFiles/projetP1S2.dir
-C:/Users/sandw/CLionProjects/image_processing3/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/sandw/CLionProjects/image_processing3/cmake-build-debug/CMakeFiles/rebuild_cache.dir
