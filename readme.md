@@ -5,7 +5,7 @@
 ![Static Badge](https://img.shields.io/badge/PROJET-Algorithmique_et_structures_de_donnees-red?style=for-the-badge&link=https%3A%2F%2Fmoodle.myefrei.fr%2Fcourse%2Fview.php%3Fid%3D14372)
 
 
-## 📋 Table des Matières
+## Table des Matières
 
 - [Présentation](#présentation)
 - [Fonctionnalités](#-fonctionnalités)
