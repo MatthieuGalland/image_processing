@@ -188,25 +188,6 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     int pixelDataSize = rowSize * img->height;
 
 // Vérification de la validité
-    /*
-    img->header.type = BMP_TYPE;
-    img->header.size = HEADER_SIZE + INFO_SIZE + pixelDataSize;
-    img->header.reserved1 = 0;
-    img->header.reserved2 = 0;
-    img->header.offset = HEADER_SIZE + INFO_SIZE;
-
-    img->header_info.size = INFO_SIZE;
-    img->header_info.width = img->width;
-    img->header_info.height = img->height;
-    img->header_info.planes = 1;
-    img->header_info.bits = DEFAULT_DEPTH;  // 24 bits
-    img->header_info.compression = 0;
-    img->header_info.imagesize = pixelDataSize;
-    img->header_info.xresolution = 0;
-    img->header_info.yresolution = 0;
-    img->header_info.ncolors = 0;
-    img->header_info.importantcolors = 0;
-    */
 
     printf("[DEBUG] En-têtes prepares - Taille fichier: %u, Offset donnees: %u\n",
            img->header.size, img->header.offset);

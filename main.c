@@ -4,32 +4,55 @@
 #include "utils.h"
 #include "menu.h"
 #include "utils24.h"
+#include <conio.h>
 #ifdef _WIN32
     #include <windows.h>
 #endif
 
-#include <stdio.h>
-#include <conio.h>
-#include <windows.h>
 
 int main(void) {
-    #ifdef _WIN32
-        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-        DWORD dwMode = 0;
-        GetConsoleMode(hOut, &dwMode);
-        SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-    #endif
-
-    t_bmp24 image24;
-    t_bmp8 image8;
+    t_bmp24 *image24 = NULL;
+    t_bmp8 *image8 = NULL;
     int selectedDepth = 0;
 
-    int a = 0;
-    while (a == 0) {
-        a = menu(&image24,&image8,&selectedDepth);
+    while (1) {
+        int quit = menu(&image24, &image8, &selectedDepth);
+        if (quit) break;
     }
 
-    //image8 = bmp8_loadImage("../sources/lena_color.bmp");
+    // if (image24) bmp24_free(image24);
+    if (image8) bmp_8_free(image8);
+
+    printf("Au revoir !\n");
+    return 0;
+}
+
+
+// int main(void) {
+//     #ifdef _WIN32
+//         HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+//         DWORD dwMode = 0;
+//         GetConsoleMode(hOut, &dwMode);
+//         SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+//     #endif
+//
+//
+//
+//
+//     t_bmp24 image24;
+//     t_bmp8 image8;
+//     int selectedDepth = 0;
+//
+//     // image8 = *bmp8_loadImage("../sources/lena_gray.bmp");
+//     // bmp8_brightness(120,&image8);
+//     // bmp8_saveImage("../img.bmp",&image8);
+//
+//
+//     int a = 0;
+//     while (a == 0) {
+//         a = menu(&image24,&image8,&selectedDepth);
+//     }
+
 /*
     while (1) {
         menu(image24, image8);
@@ -88,6 +111,6 @@ int main(void) {
 
     //bmp24_applyFilter(image24,filter,3);
     //bmp24_saveImage(image24, "../sources/save_color.bmp");
-
-    return 0;
-}
+//
+//     return 0;
+// }
