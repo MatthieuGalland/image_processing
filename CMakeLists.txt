@@ -11,4 +11,5 @@ add_executable(projetP1S2 main.c
         utils24.c
         menu.c
         menu.h
-        color.h)
+        color.h
+        filters.h)
