@@ -12,4 +12,6 @@ add_executable(projetP1S2 main.c
         menu.c
         menu.h
         color.h
+        egalisation.c
+        egalisation.h
         filters.h)

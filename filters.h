@@ -26,21 +26,20 @@ const float GAUSSIAN_BLUR_SIMPLE[3][3] = {
 };
 
 
-const int OUTLINE[3][3] = {
+const float OUTLINE[3][3] = {
     {-1, -1, -1},
     {-1,  8, -1},
     {-1, -1, -1}
 };
 
 
-const int EMBOSS[3][3] = {
+const float EMBOSS[3][3] = {
     {-2, -1,  0},
     {-1,  1,  1},
     { 0,  1,  2}
 };
 
-
-static const int SHARPEN[3][3] = {
+const float SHARPEN[3][3] = {
     { 0, -1,  0},
     {-1,  5, -1},
     { 0, -1,  0}

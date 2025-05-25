@@ -1,6 +1,17 @@
+// utils.c
 //
-// Created by thoma on 15.03.2025.
+// Ce fichier contient les fonctions de base pour la manipulation d'images BMP 8 bits (niveaux de gris).
+// Il fournit les outils essentiels pour le chargement, la sauvegarde et le traitement des images,
+// ainsi que diverses fonctions pour appliquer des filtres et des transformations.
 //
+// Fonctionnalités:
+// - Chargement et sauvegarde d'images BMP 8 bits
+// - Gestion de la mémoire (allocation et libération)
+// - Fonctions de filtrage: négatif, luminosité, seuil
+// - Application de filtres de convolution (matrices de kernel)
+//
+// Auteur: Thomas Darbo et Matthieu Galland
+// Date: Main 2025
 
 #include "utils.h"
 

@@ -1,6 +1,17 @@
+// menu.c
 //
-// Created by Thomas on 02/05/2025.
+// Ce fichier implémente l'interface utilisateur du programme de traitement d'images.
+// Il fournit des menus interactifs pour charger, manipuler et sauvegarder des images BMP
+// en formats 8 bits (niveaux de gris) et 24 bits (couleur).
 //
+// Fonctionnalités principales:
+// - Chargement et sauvegarde d'images
+// - Application de filtres (négatif, luminosité, flou, contour, etc.)
+// - Égalisation d'histogramme
+// - Interface utilisateur textuelle avec gestion des entrées utilisateur
+//
+// Auteurs: Thomas Darbo et Matthieu Galland
+// Date: Mai 2025
 
 #include "menu.h"
 
@@ -13,6 +24,7 @@
 #include "utils.h"
 #include "utils24.h"
 #include "color.h"
+#include "egalisation.h"
 #include "filters.h"
 
 void clear_screen() {
@@ -28,22 +40,24 @@ int menu(t_bmp24 **image24, t_bmp8 **image8, int *selectedDepth) {
 
     if (i8 || i24) {
         if (i8){
-            choix = print_menu("Menu de gestion Image 8 bits", "[!] Image loaded", "Appliquer un filtre", "Sauvegarder l'image", "Decharger l'image",
+            choix = print_menu("Menu de gestion Image 8 bits", "[!] Image loaded", "Appliquer un filtre","Egaliser l'image", "Sauvegarder l'image", "Decharger l'image",
                                    "Retour au menu principal", NULL);
             switch (choix) {
                 case 1: image8_filter_menu(*image8); break;
-                case 2: image_save(*image8,*image24,*selectedDepth); break;
-                case 3: bmp_8_free(*image8); *image8 = NULL; *selectedDepth = 0; break;
-                case 4: *selectedDepth = 0; break; // Back to main menu
+                case 2: bmp8_equalize(*image8, 256); break;
+                case 3: image_save(*image8,*image24,*selectedDepth); break;
+                case 4: bmp_8_free(*image8); *image8 = NULL; *selectedDepth = 0; break;
+                case 5: *selectedDepth = 0; break;
             }
         } else {
-            choix = print_menu("Menu de gestion Image 24 bits", "[!] Image loaded", "Appliquer un filtre", "Sauvegarder l'image", "Decharger l'image",
+            choix = print_menu("Menu de gestion Image 24 bits", "[!] Image loaded", "Appliquer un filtre","Egaliser l'image", "Sauvegarder l'image", "Decharger l'image",
                                    "Retour au menu principal", NULL);
             switch (choix) {
                 case 1: image24_filter_menu(*image24); break;
-                case 2: image_save(*image8,*image24,*selectedDepth); break;
-                case 3: /*bmp24_free(*image24);*/ *image24 = NULL; *selectedDepth = 0; break;
-                case 4: *selectedDepth = 0; break; // Back to main menu
+                case 2: bmp24_equalize(*image24); break;
+                case 3: image_save(*image8,*image24,*selectedDepth); break;
+                case 4: /*bmp24_free(*image24);*/ *image24 = NULL; *selectedDepth = 0; break;
+                case 5: *selectedDepth = 0; break;
             }
         }
     } else {
@@ -57,7 +71,7 @@ int menu(t_bmp24 **image24, t_bmp8 **image8, int *selectedDepth) {
                 }
                 break;
             case 2:
-                printf("Projet BMP par Thomas Darbois.\n");
+                printf("Projet de traitement d'image par Thomas Darbo et Matthieu Galland.\n");
                 printf("Appuyez sur Entrée pour revenir au menu...");
                 getchar(); getchar();
                 break;
@@ -156,7 +170,7 @@ void image_save(t_bmp8 *image8, t_bmp24 *image24, int colorDepth) {
 
     if (colorDepth == 8) {
         if (image8) {
-            bmp8_saveImage("../1saved_image.bmp", image8);
+            bmp8_saveImage("../saved_image.bmp", image8);
             colorDepth = 0; clear_screen();
             printf("%s[INFO] Image 8 bits sauvegardee avec succes !%s\n", ANSI_GREEN, ANSI_RESET);
         } else {

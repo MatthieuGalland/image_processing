@@ -1,57 +1,68 @@
+// egalisation.c
+// 
+// Ce fichier implémente des algorithmes d'égalisation d'histogramme pour le traitement d'images.
+// Il contient des fonctions pour calculer les histogrammes, les fonctions de distribution
+// cumulatives (CDFs), et effectuer l'égalisation d'histogramme sur des images BMP en niveaux
+// de gris 8 bits et en couleur 24 bits.
+// L'égalisation des images couleur est réalisée dans l'espace colorimétrique YUV, en égalisant
+// uniquement la composante de luminance (Y) tout en préservant la chrominance.
+
 #include <stdio.h>
 #include "egalisation.h"
 #include "utils.h"
 #include <stdlib.h>
 #include <math.h>
 
-unsigned int * bmp8_computeHistogram(t_bmp8 * img) {
+unsigned int* bmp8_computeHistogram(t_bmp8* img) {
     unsigned char* pixels = img->data;
-    unsigned int* histogramme = calloc(256,sizeof(unsigned int));
-    for(int i=0;i<img->height;i++) {
-        for (int j=0;j<img->width;j++) {
-            histogramme[*(pixels+i*img->width+j)]++;
+    unsigned int* histogramme = calloc(256, sizeof(unsigned int));
+    for (int i = 0; i < img->height; i++) {
+        for (int j = 0; j < img->width; j++) {
+            histogramme[*(pixels + i * img->width + j)]++;
         }
     }
     return histogramme;
 }
 
-unsigned int * bmp8_getCDF(unsigned int * hist) {
-    unsigned int* cdf;
-    unsigned int* hist_eq;
+unsigned int* bmp8_getCDF(unsigned int* hist) {
+    unsigned int* cdf = calloc(256, sizeof(unsigned int));
     cdf[0] = hist[0];
-    for (int i=1;i<=255;i++) {
-        cdf[i]=cdf[i-1]+hist[i];
+    for (int i = 1; i <= 255; i++) {
+        cdf[i] = cdf[i-1] + hist[i];
     }
     return cdf;
 }
 
-unsigned int *  bmp8_computeCDF(unsigned int* cdf, int N) {
-    unsigned * hist_eq;
+unsigned int* bmp8_computeCDF(unsigned int* cdf, int N) {
+    unsigned int* hist_eq = calloc(256, sizeof(unsigned int));
     int cdf_min;
-    int i=0;
-    while(cdf[i]==0)
+    int i = 0;
+    while (cdf[i] == 0)
         i++;
     cdf_min = cdf[i];
-    for (int i=0;i<=255;i++) {
+    for (i = 0; i <= 255; i++) {
         hist_eq[i] = round(((double)(cdf[i] - cdf_min) / (N - cdf_min)) * 255);
-        printf("%d\n",hist_eq[i]);
     }
     return hist_eq;
 }
 
-
 void bmp8_equalize(t_bmp8* img, double N) {
-    int* hist = bmp8_computeHistogram(img);
-    int* cdf = bmp8_getCDF(hist);
-    double nb_pixels = img->width * img->height;
-    int* hist_eq = bmp8_computeCDF(cdf, nb_pixels);
-    for (int i=0;i<img->dataSize;i++)
+    unsigned int* hist = bmp8_computeHistogram(img);
+    unsigned int* cdf = bmp8_getCDF(hist);
+    int nb_pixels = img->width * img->height;
+    unsigned int* hist_eq = bmp8_computeCDF(cdf, nb_pixels);
+    
+    for (int i = 0; i < img->dataSize; i++) {
         img->data[i] = hist_eq[img->data[i]];
+    }
+    
 
+    free(hist);
+    free(cdf);
+    free(hist_eq);
 }
 
-
-void bmp24_equalize(t_bmp24 *img) {
+void bmp24_equalize(t_bmp24* img) {
     int width = img->width;
     int height = img->height;
     int nb_pixels = width * height;
@@ -60,7 +71,7 @@ void bmp24_equalize(t_bmp24 *img) {
     int** Y = malloc(height * sizeof(int*));
     float** U = malloc(height * sizeof(float*));
     float** V = malloc(height * sizeof(float*));
-    int* histogramme = calloc(256, sizeof(int)); // 256 niveaux de gris
+    unsigned int* histogramme = calloc(256, sizeof(unsigned int)); // 256 niveaux de gris
 
     for (int i = 0; i < height; i++) {
         Y[i] = malloc(width * sizeof(int));
@@ -83,16 +94,17 @@ void bmp24_equalize(t_bmp24 *img) {
             histogramme[Y[i][j]]++;
         }
     }
+    
     // égalisation de Y
-    int* cdf = bmp8_getCDF(histogramme);
-    int* hist_eq = bmp8_computeCDF(cdf, nb_pixels);
+    unsigned int* cdf = bmp8_getCDF(histogramme);
+    unsigned int* hist_eq = bmp8_computeCDF(cdf, nb_pixels);
 
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            printf("%d\n",Y[i][j]);
             Y[i][j] = hist_eq[Y[i][j]];
         }
     }
+    
     // conversion YUV -> RGB
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -109,5 +121,18 @@ void bmp24_equalize(t_bmp24 *img) {
             img->data[i][j].blue  = fmin(fmax(b, 0), 255);
         }
     }
-
+    
+    // Free allocated memory
+    free(cdf);
+    free(hist_eq);
+    free(histogramme);
+    
+    for (int i = 0; i < height; i++) {
+        free(Y[i]);
+        free(U[i]);
+        free(V[i]);
+    }
+    free(Y);
+    free(U);
+    free(V);
 }
