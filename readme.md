@@ -2,7 +2,7 @@
 
 [![Langage: C](https://img.shields.io/badge/Langage-C-orange.svg?style=for-the-badge)](https://www.c-language.org/)
 [![Static Badge](https://img.shields.io/badge/Auteurs-Thomas_Darbo_--_Matthieu_Galland-blue?style=for-the-badge)](https://github.com/MatthieuGalland/image_processing)
-[![Static Badge](https://img.shields.io/badge/PROJET-Algorithmique_et_structures_de_donnees-red?style=for-the-badge)](https%3A%2F%2Fmoodle.myefrei.fr%2Fcourse%2Fview.php%3Fid%3D14372)
+[![Static Badge](https://img.shields.io/badge/PROJET-Algorithmique_et_structures_de_donnees-red?style=for-the-badge)](https://moodle.myefrei.fr/course/view.php?id=14372)
 
 
 ## Table des Matières
