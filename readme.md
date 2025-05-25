@@ -3,7 +3,11 @@
 [![Langage: C](https://img.shields.io/badge/Langage-C-orange.svg?style=for-the-badge)](https://www.c-language.org/)
 [![Static Badge](https://img.shields.io/badge/Auteurs-Thomas_Darbo_--_Matthieu_Galland-blue?style=for-the-badge)](https://github.com/MatthieuGalland/image_processing)
 [![Static Badge](https://img.shields.io/badge/PROJET-Algorithmique_et_structures_de_donnees-red?style=for-the-badge)](https://moodle.myefrei.fr/course/view.php?id=14372)
-
+----
+### Liens :
+- Github : https://github.com/MatthieuGalland/image_processing
+- Github Classroom : https://github.com/cs-efrei/image-processing-a-galland-darbo
+  - *On vous conseille de visiter les deux github pour avoir le plus d'info sur les commits*
 
 ## Table des Matières
 
