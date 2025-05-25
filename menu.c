@@ -18,43 +18,49 @@
 
 int menu(t_bmp24 *image24, t_bmp8 *image8, int *selectedDepth) {
 
-    const bool i8 = true;//*selectedDepth == 8;
+    printf("\n");
+    const bool i8 = *selectedDepth == 8;
     const bool i24 = *selectedDepth == 24;
-
-    if (i8 || i24) {
-        if (i8) {
-            print_menu("Menu de gestion Image 8 bits", "[!] Image loaded", "Appliquer un filtre", "Lire les modifications de l'image", "Sauvegarder l'image", "Decharger l'image", NULL);
-        }
-    } else {
-
-        printf("\n =========================\n ### Menu principal ###\n");
-        printf("Quelle operation voulez-vous effectuer ?\n");
-        printf("1. Charger une image\n");
-        printf("2. Quitter\n");
-        printf("(pour avoir acces a plus d'options, chargez une image)\n\n");
-    }
-
-
     int choix;
-    scanf("%d", &choix);
+
+
 
     if (i8 || i24) {
-        if (i8) {
-            image_menu(image8, image24, 8);
+        if (i8){
+            choix = print_menu("Menu de gestion Image 8 bits", "[!] Image loaded", "Appliquer un filtre",
+                                   "Lire les modifications de l'image", "Sauvegarder l'image", "Decharger l'image",
+                                   NULL);
+            system("cls");
+            switch (choix) {
+                case 1: image8_filter_menu(image8); break;
+                case 2: /*LOGS*/ break;
+                case 3: /*SAVE*/ break;
+                case 4: /*BACK*/ break;
+            }
+
         }
+
     } else {
+        choix = print_menu("Menu principal", "[!] Aucune image chargee", "Charger une image","Credits", "Quitter", NULL);
         switch (choix) {
             case 1:
                 printf("Chargement d'une image...\n");
                 *selectedDepth = loadImage(image24, image8);
+                if (*selectedDepth == 0) {
+                    printf("%s%s[ERREUR] Impossible de charger l'image.%s\n", ANSI_BOLD, ANSI_RED, ANSI_RESET);
+                }
                 break;
             case 2:
+                /*CREDITS*/break;
+            case 3:
                 return 1;
             default:
                 printf("Choix invalide. Veuillez reessayer.\n");
                 break;
         }
     }
+
+
     return 0;
 }
 
@@ -84,7 +90,7 @@ int loadImage(t_bmp24 *image24, t_bmp8 *image8) {
             break;
 
         default:
-            printf("[ERREUR] Format d'image non pris en charge.\n");
+            printf("[ERREUR] Format d'image non pris en charge (%d color bit).\n", cd);
             break;
     }
     return cd;
@@ -143,72 +149,132 @@ int image_menu(t_bmp8 *image8, t_bmp24 *image24, const int colorDepth) {
 }
 
 int image8_filter_menu(t_bmp8 *image8) {
-
-    printf("\n=========================\n### Menu filtre image 8 bits ###\n");
-    printf("    | 1. Filtre Negatif\n");
-    printf("    | 2. Filtre Luminosite\n");
-    printf("    | 3. Filtre Threshold\n");
-
-    int choix;
-    scanf("%d", &choix);
-
+    const int choix = print_menu("Menu filtre image 8 bits","[!] Image loaded","Filtre negatif","Filtre luminosite","Filtre threshold",NULL);
     switch (choix) {
         case 1: {
-            bmp8_negative(image8);
-            printf("[INFO] Filtre NEGATIF applique !\n");
+            bmp8_negative(image8); system("cls");
+            printf("%s[INFO] Filtre NEGATIF applique !\n%s", ANSI_GREEN, ANSI_RESET);
             break;
         }
         case 2: {
             const int a = input_value(0,255,"LUMINOSITE");
-            bmp8_brightness(a, image8);
-            printf("[INFO] Filtre LUMINOSITE de %d applique !\n", a);
+            bmp8_brightness(a, image8); system("cls");
+            printf("%s[INFO] Filtre LUMINOSITE de %d applique !\n%s", ANSI_GREEN,a,ANSI_RESET);
             break;
         }
         case 3: {
             const int a = input_value(0,255,"THRESHOLD");
-            bmp8_brightness(a, image8);
-            printf("[INFO] Filtre THRESHOLD de %d applique !\n", a);
+            bmp8_brightness(a, image8); system("cls");
+            printf("%s[INFO] Filtre THRESHOLD de %d applique !\n%s",ANSI_GREEN, a, ANSI_RESET);
             break;
         }
+        default:
+            printf("%s%s%s[ERREUR] Choix invalide. Veuillez reessayer.\n%s", ANSI_BOLD,ANSI_UNDERLINE, ANSI_RED, ANSI_RESET);
+            break;
     }
     return 0;
 }
 
 int input_value(int min, int max, char *message) {
 
-    printf("\n\nVeuillez inserer une valeur pour %s :\n    | Valeurs acceptees : %d - %d\n", message, min, max);
-    int value;
-    scanf("%d", &value);
-    while (value < min || value > max) {
-        printf("\nValeur invalide. Veuillez entrer une valeur entre %d et %d : ", min, max);
-        scanf("%d", &value);
-    }
-    return value;
+    printf("\n|    Veuillez inserer une valeur pour %s :\n|      Valeurs acceptees : %d - %d", message, min, max);
+
+
+
+    int choice = 0;
+    char buffer[256];
+    do {
+        printf("   Saisissez votre choix (1-%d) : ", 255);
+        fflush(stdout);
+
+        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+            printf("\033[1A\033[2K");  // Move up one line and clear it
+            printf("   Saisissez votre choix (1-%d) : %s[ERROR] Entrée invalide.%s\n",
+                   255, ANSI_RED, ANSI_RESET);
+            continue;
+        }
+
+        // Remove newline character if present
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len-1] == '\n') {
+            buffer[len-1] = '\0';
+        }
+
+        int valid = (sscanf(buffer, "%d", &choice) == 1 && choice >= 1 && choice <= 255);
+
+        // Move up one line and clear it
+        printf("\033[1A\033[2K");
+
+        if (valid) {
+            printf("   Saisissez votre choix (1-%d) : %d %s[VALIDE]%s\n",
+                   255, choice, ANSI_GREEN, ANSI_RESET);
+        } else {
+            printf("   Saisissez votre choix (1-%d) : %s %s[ERROR] Choix invalide (1-%d).\n%s",
+                   255, buffer, ANSI_RED, 255,ANSI_RESET);
+            choice = 0;
+        }
+
+    } while (choice == 0);
+
+
+    printf("\n\n");
+    return choice;
 }
 
-void print_menu(char* title, char* subtitle,char *message,...) {
-
+int print_menu(char *title, char *subtitle, char *message, ...) {
     printf("|\n");
-    printf("|   %s%s%s%s\n",ANSI_BOLD,ANSI_GREEN,title,ANSI_RESET);
-    printf("|   %s%s%s%s\n",ANSI_BLINK,ANSI_RED,subtitle,ANSI_RESET);
+    printf("|   %s%s%s%s\n", ANSI_BOLD, ANSI_GREEN, title, ANSI_RESET);
+    printf("|   %s%s%s%s\n", ANSI_BLINK, ANSI_RED, subtitle, ANSI_RESET);
     printf("|\n");
 
     va_list args;
     va_start(args, message);
 
-    char* current_message = message;
+    char *current_message = message;
     int i = 0;
     while (current_message != NULL) {
-        printf("|   %d : %s\n",++i, current_message);
-        current_message = va_arg(args, char*);
+        printf("|   %d : %s\n", ++i, current_message);
+        current_message = va_arg(args, char *);
     }
     printf("|\n");
-    printf("   Saisissez votre choix : ");
+
+    int choice = 0;
+    char buffer[256];
+    do {
+        printf("   Saisissez votre choix (1-%d) : ", i);
+        fflush(stdout);  // Ensure the prompt is displayed
+
+        if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+            printf("\033[1A\033[2K");  // Move up one line and clear it
+            printf("   Saisissez votre choix (1-%d) : %s[ERROR] Entrée invalide.%s\n",
+                   i, ANSI_RED, ANSI_RESET);
+            continue;
+        }
+
+        // Remove newline character if present
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len-1] == '\n') {
+            buffer[len-1] = '\0';
+        }
+
+        int valid = (sscanf(buffer, "%d", &choice) == 1 && choice >= 1 && choice <= i);
+
+        // Move up one line and clear it
+        printf("\033[1A\033[2K");
+
+        if (valid) {
+            printf("   Saisissez votre choix (1-%d) : %d %s[VALIDE]%s\n",
+                   i, choice, ANSI_GREEN, ANSI_RESET);
+        } else {
+            printf("   Saisissez votre choix (1-%d) : %s %s[ERROR] Choix invalide (1-%d).%s\n",
+                   i, buffer, ANSI_RED,i, ANSI_RESET);
+            choice = 0;
+        }
+
+    } while (choice == 0);
 
     va_end(args);
+    return choice;
 }
-
-
-
 
 

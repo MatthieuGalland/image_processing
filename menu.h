@@ -18,5 +18,6 @@ int image_menu(t_bmp8 *image8, t_bmp24 *image24, int colorDepth);
 int image8_filter_menu(t_bmp8 *image8);
 
 int input_value(int min, int max, char* message);
-void print_menu(char* title, char* subtitle,char *message,...);
+
+int print_menu(char *title, char *subtitle, char *message, ...);
 #endif //MENU_H
