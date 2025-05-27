@@ -247,7 +247,6 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
             fputc(0x00, file);
         }
     }
-
     printf("[DEBUG] Donnees des pixels ecrites avec succès: %d lignes, %d colonnes, %d octets de padding\n",
            img->height, img->width, rowPadding);
 
@@ -293,7 +292,6 @@ void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
     int width = image->width, height = image->height;
     int offset = kernelSize / 2;
 
-    // Allocation temporaire et copie des pixels originaux
     t_pixel **tmp = bmp24_allocateDataPixels(width,height);
     if (!tmp) return;
     for (int y = 0; y < height; y++) {
@@ -301,8 +299,8 @@ void bmp24_applyFilter(t_bmp24 *image, float **kernel, int kernelSize) {
             tmp[y][x] = image->data[y][x];
         }
     }
-    //printf("Fin mapping pixels\n");
-    // Application du filtre convolution sur chaque canal
+
+
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             double sumR = 0.0, sumG = 0.0, sumB = 0.0;
@@ -391,25 +389,20 @@ void bmp24_print_preview(t_bmp24 *image) {
         return;
     }
 
-    // Scale factor to fit image in console
-    // Assuming console is roughly 80x25 characters
-    int scale_x = image->width / 30 + 1;
-    int scale_y = image->height / 10 + 1;
 
-    // Ensure scale factors are at least 1
+    int scale_x = image->width / 61 + 1;
+    int scale_y = image->height / 21 + 1;
+
     if (scale_x < 1) scale_x = 1;
     if (scale_y < 1) scale_y = 1;
 
-    // ASCII characters for different brightness levels (from dark to bright)
     const char *ascii_chars = "#";
     int ascii_len = strlen(ascii_chars);
 
     printf("Image preview (%dx%d):\n", image->width, image->height);
 
-    // Iterate through the scaled image
     for (int y = 0; y < image->height; y += scale_y) {
         for (int x = 0; x < image->width; x += scale_x) {
-            // Calculate average color for this block
             int r_sum = 0, g_sum = 0, b_sum = 0;
             int count = 0;
 
@@ -427,14 +420,11 @@ void bmp24_print_preview(t_bmp24 *image) {
                 int g_avg = g_sum / count;
                 int b_avg = b_sum / count;
 
-                // Calculate brightness (simple average of RGB)
                 int brightness = (r_avg + g_avg + b_avg) / 3;
 
-                // Map brightness to ASCII character
                 int char_index = brightness * ascii_len / 256;
                 if (char_index >= ascii_len) char_index = ascii_len - 1;
 
-                // Use ANSI escape sequences for color
                 printf("\033[38;2;%d;%d;%dm%c\033[0m",
                        r_avg, g_avg, b_avg,
                        ascii_chars[char_index]);

@@ -50,14 +50,15 @@ int menu(t_bmp24 **image24, t_bmp8 **image8, int *selectedDepth) {
                 case 5: *selectedDepth = 0; break;
             }
         } else {
-            choix = print_menu("Menu de gestion Image 24 bits", "[!] Image loaded", "Appliquer un filtre","Egaliser l'image", "Sauvegarder l'image", "Decharger l'image",
+            choix = print_menu("Menu de gestion Image 24 bits", "[!] Image loaded", "Appliquer un filtre","Egaliser l'image", "Sauvegarder l'image", "Decharger l'image","Preview de l'image",
                                    "Retour au menu principal", NULL);
             switch (choix) {
                 case 1: image24_filter_menu(*image24); break;
                 case 2: bmp24_equalize(*image24); break;
                 case 3: image_save(*image8,*image24,*selectedDepth); break;
                 case 4: /*bmp24_free(*image24);*/ *image24 = NULL; *selectedDepth = 0; break;
-                case 5: *selectedDepth = 0; break;
+                case 5: clear_screen(); bmp24_print_preview(*image24); getchar(); getchar(); break;
+                case 6: *selectedDepth = 0; break;
             }
         }
     } else {
